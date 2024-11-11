@@ -1,0 +1,8 @@
+{
+    "C_Cpp.default.compilerPath": "D:\\msys64\\ucrt64\\bin\\gcc.exe",
+    "files.associations": {
+        "*.mdx": "markdown",
+        "window.h": "c",
+        "glfw3.h": "c"
+    }
+}

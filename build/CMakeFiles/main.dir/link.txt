@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/main.dir/main.c.o CMakeFiles/main.dir/window.c.o CMakeFiles/main.dir/vulkan_fn.c.o -o main  /usr/lib/libvulkan.so /usr/lib/libglfw.so -lm

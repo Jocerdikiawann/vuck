@@ -1,3 +1,3 @@
-/home/cexup/Documents/Work/C/vuck/build/CMakeFiles/main.dir
-/home/cexup/Documents/Work/C/vuck/build/CMakeFiles/edit_cache.dir
-/home/cexup/Documents/Work/C/vuck/build/CMakeFiles/rebuild_cache.dir
+D:/workspace/vuck/build/CMakeFiles/vuck.dir
+D:/workspace/vuck/build/CMakeFiles/ALL_BUILD.dir
+D:/workspace/vuck/build/CMakeFiles/ZERO_CHECK.dir

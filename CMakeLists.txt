@@ -1,6 +1,15 @@
-cmake_minimum_required(VERSION 3.10..3.27)
-project(Vuck)
+cmake_minimum_required(VERSION 3.10)
+project(vuck)
 
-add_executable(main main.c window.c vulkan_fn.c)
-target_link_libraries(main /usr/lib/libvulkan.so /usr/lib/libglfw.so
-                      /usr/lib/libm.so)
+set(GLFW_INCLUDE_DIR "D:/glfw-3.4.bin.WIN64/include")
+set(GLFW_LIBRARY "D:/glfw-3.4.bin.WIN64/lib-mingw-w64")
+set(VULKAN_SDK "D:/VulkanSDK/")
+
+include_directories("${GLFW_INCLUDE_DIR}")
+include_directories("${VULKAN_SDK}/Include")
+link_directories("${GLFW_LIBRARY}")
+link_directories("${VULKAN_SDK}/Lib")
+
+
+add_executable(vuck main.c window.c vulkan_fn.c)
+target_link_libraries(vuck glfw3 vulkan-1)

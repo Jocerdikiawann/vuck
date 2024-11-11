@@ -1,3 +1,0 @@
-D:/workspace/vuck/build/CMakeFiles/vuck.dir
-D:/workspace/vuck/build/CMakeFiles/ALL_BUILD.dir
-D:/workspace/vuck/build/CMakeFiles/ZERO_CHECK.dir

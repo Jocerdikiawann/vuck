@@ -16,8 +16,19 @@ typedef struct
   VkInstance instance;
 } vk_t;
 
+typedef struct
+{
+  const char **extension;
+  uint32_t count;
+} extensions_t;
+
 vk_t create_instance();
 bool check_validation_layer_support();
-const char **get_required_extensions();
+void get_required_extensions(extensions_t *extension);
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_type,
+    const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data,
+    void *p_user_data);
 
 #endif // !VULKAN_FN_H

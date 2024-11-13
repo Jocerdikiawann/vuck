@@ -5,15 +5,9 @@ const char *validation_layers[] = {
     "VK_LAYER_KHRONOS_validation",
 };
 
-#ifndef DEBUG
-const bool enable_validation_layers = false;
-#else
-const bool enable_validation_layers = true;
-#endif
-
 vk_t create_instance()
 {
-  if (enable_validation_layers && !check_validation_layer_support())
+  if (ENABLE_VALIDATION_LAYERS && !check_validation_layer_support())
   {
     printf("Validation layers requested, but not available!\n");
     exit(0);
@@ -37,14 +31,19 @@ vk_t create_instance()
       .pApplicationInfo = &app_info,
       .enabledExtensionCount = glfw_extension_count,
       .ppEnabledExtensionNames = glfw_extensions,
-      .enabledLayerCount = 0};
+      .enabledLayerCount = 0,
+  };
 
-  if (enable_validation_layers)
+  VkDebugUtilsMessengerCreateInfoEXT debug_create_info = {};
+  if (ENABLE_VALIDATION_LAYERS)
   {
     extensions_t *extensions;
     get_required_extensions(extensions);
     create_info.enabledLayerCount = extensions->count;
     create_info.ppEnabledLayerNames = extensions->extension;
+
+    debug_create_info = populate_debug_messenger_create_info();
+    create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debug_create_info;
   }
   else
   {
@@ -57,10 +56,77 @@ vk_t create_instance()
     exit(0);
   }
 
+
   vk_t vk = {
       .instance = instance,
   };
+
+  setup_debug_messenger(&vk);
   return vk;
+}
+
+VkResult create_debug_utils_messenger_ext(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT *p_create_info,
+    const VkAllocationCallbacks *p_allocator,
+    VkDebugUtilsMessengerEXT *p_debug_messenger)
+{
+  PFN_vkCreateDebugUtilsMessengerEXT func =
+      (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+          instance, "vkCreateDebugUtilsMessengerEXT");
+  if (func != NULL)
+  {
+    return func(instance, p_create_info, p_allocator, p_debug_messenger);
+  }
+  else
+  {
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
+  }
+};
+
+void destroy_debug_utils_messenger_ext(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT debug_messenger,
+    const VkAllocationCallbacks *p_allocator)
+{
+  PFN_vkDestroyDebugUtilsMessengerEXT func =
+      (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+          instance, "vkDestroyDebugUtilsMessengerEXT");
+  if (func != NULL)
+  {
+    func(instance, debug_messenger, p_allocator);
+  }
+};
+
+void setup_debug_messenger(vk_t *vk)
+{
+  if (!ENABLE_VALIDATION_LAYERS)
+    return;
+
+  VkDebugUtilsMessengerCreateInfoEXT create_info = populate_debug_messenger_create_info();
+
+  if (create_debug_utils_messenger_ext(vk->instance, &create_info, NULL, &vk->debug_messenger) != VK_SUCCESS)
+  {
+    printf("Failed to set up debug messenger\n");
+    exit(0);
+  }
+}
+
+VkDebugUtilsMessengerCreateInfoEXT populate_debug_messenger_create_info()
+{
+  VkDebugUtilsMessengerCreateInfoEXT create_info = {
+      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+      .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+      .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                     VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+      .pfnUserCallback = debug_callback,
+      .pUserData = VK_NULL_HANDLE,
+  };
+  return create_info;
 }
 
 bool check_validation_layer_support()
@@ -97,13 +163,17 @@ void get_required_extensions(extensions_t *extension)
 {
   uint32_t glfw_extension_count = 0;
   const char **glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-  if (enable_validation_layers)
+  uint32_t extenstion_count = glfw_extension_count + 1;
+  const char *extensions[extenstion_count];
+  if (ENABLE_VALIDATION_LAYERS)
   {
     for (int i = 0; i < glfw_extension_count; ++i)
     {
-      extension->extension[i] = glfw_extensions[i];
+      extensions[i] = glfw_extensions[i];
     }
-    extension->count = glfw_extension_count;
+    // set the last element to the debug extension
+    extensions[extenstion_count] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+    extension->count = extenstion_count;
   }
 }
 
@@ -113,8 +183,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data,
     void *p_user_data)
 {
-  printf("Validation layer: %s\n", p_callback_data->pMessage);
+
+  log_message("INFO", p_callback_data->pMessage);
+
   return VK_FALSE;
 }
 
-
+void log_message(const char *severity, const char *message)
+{
+  printf("[%s] Validation layer: %s\n", severity, message);
+}

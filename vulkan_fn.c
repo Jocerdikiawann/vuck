@@ -56,7 +56,6 @@ vk_t create_instance()
     exit(0);
   }
 
-
   vk_t vk = {
       .instance = instance,
   };

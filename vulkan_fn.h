@@ -11,11 +11,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#ifdef DEBUG
 #define ENABLE_VALIDATION_LAYERS true
-#else
-#define ENABLE_VALIDATION_LAYERS false
-#endif
 
 typedef struct
 {

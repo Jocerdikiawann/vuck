@@ -37,10 +37,10 @@ vk_t create_instance()
   VkDebugUtilsMessengerCreateInfoEXT debug_create_info = {};
   if (ENABLE_VALIDATION_LAYERS)
   {
-    extensions_t *extensions;
-    get_required_extensions(extensions);
-    create_info.enabledLayerCount = extensions->count;
-    create_info.ppEnabledLayerNames = extensions->extension;
+    extensions_t extensions;
+    get_required_extensions(&extensions);
+    create_info.enabledLayerCount = extensions.count;
+    create_info.ppEnabledLayerNames = extensions.extension;
 
     debug_create_info = populate_debug_messenger_create_info();
     create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debug_create_info;

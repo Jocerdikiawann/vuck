@@ -13,3 +13,7 @@ link_directories("${VULKAN_SDK}/Lib")
 
 add_executable(vuck main.c window.c vulkan_fn.c)
 target_link_libraries(vuck glfw3 vulkan-1)
+
+set_target_properties(vuck PROPERTIES 
+COMPILE_DEFINITIONS_DEBUG "DEBUG" 
+COMPILE_OPTIONS_DEBUG "-g")

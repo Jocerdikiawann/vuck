@@ -17,6 +17,7 @@ int main()
   glfwInit();
   GLFWwindow *window = create_window(800, 600, "Vuck");
   vk_t vk = create_instance();
+  printf("TEST %d\n", ENABLE_VALIDATION_LAYERS);
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();

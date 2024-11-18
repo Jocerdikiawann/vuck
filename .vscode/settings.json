@@ -3,6 +3,9 @@
     "files.associations": {
         "*.mdx": "markdown",
         "window.h": "c",
-        "glfw3.h": "c"
+        "glfw3.h": "c",
+        "vulkan.h": "c",
+        "algorithm": "c",
+        "format": "c"
     }
 }

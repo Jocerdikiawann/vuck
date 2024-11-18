@@ -21,6 +21,11 @@ typedef struct
 
 typedef struct
 {
+  char *extension;
+} extension_t;
+
+typedef struct
+{
   const char **extension;
   uint32_t count;
 } extensions_t;
@@ -44,7 +49,7 @@ void destroy_debug_utils_messenger_ext(
 
 bool check_validation_layer_support();
 
-void get_required_extensions(extensions_t *extension);
+void get_required_extensions(extensions_t *extensions);
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,

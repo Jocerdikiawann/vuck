@@ -15,7 +15,7 @@ vk_t create_instance()
 
   VkInstance instance;
   VkApplicationInfo app_info = {
-      .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+      .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
       .pApplicationName = "Hello Triangle",
       .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
       .pEngineName = "No Engine",
@@ -23,31 +23,41 @@ vk_t create_instance()
       .apiVersion = VK_API_VERSION_1_0,
   };
 
-  uint32_t glfw_extension_count = 0;
-  const char **glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-
   VkInstanceCreateInfo create_info = {
       .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
       .pApplicationInfo = &app_info,
-      .enabledExtensionCount = glfw_extension_count,
-      .ppEnabledExtensionNames = glfw_extensions,
       .enabledLayerCount = 0,
   };
+
+  uint32_t extension_count = 0;
+  const char **debug_glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+  const char *extensions[extension_count + 1];
+  for (size_t i = 0; i < extension_count; ++i)
+  {
+    extensions[i] = debug_glfw_extensions[i];
+  }
+
+  if (ENABLE_VALIDATION_LAYERS)
+  {
+    extensions[extension_count] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+    extension_count++;
+  }
+
+  create_info.enabledExtensionCount = extension_count;
+  create_info.ppEnabledExtensionNames = extensions;
 
   VkDebugUtilsMessengerCreateInfoEXT debug_create_info = {};
   if (ENABLE_VALIDATION_LAYERS)
   {
-    extensions_t extensions;
-    get_required_extensions(&extensions);
-    create_info.enabledLayerCount = extensions.count;
-    create_info.ppEnabledLayerNames = extensions.extension;
-
+    create_info.enabledLayerCount = size_of_validation_layers;
+    create_info.ppEnabledLayerNames = validation_layers;
     debug_create_info = populate_debug_messenger_create_info();
     create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debug_create_info;
   }
   else
   {
     create_info.enabledLayerCount = 0;
+    create_info.pNext = NULL;
   }
 
   if (vkCreateInstance(&create_info, NULL, &instance) != VK_SUCCESS)
@@ -117,13 +127,11 @@ VkDebugUtilsMessengerCreateInfoEXT populate_debug_messenger_create_info()
       .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
       .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
       .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
       .pfnUserCallback = debug_callback,
-      .pUserData = VK_NULL_HANDLE,
   };
   return create_info;
 }
@@ -158,32 +166,20 @@ bool check_validation_layer_support()
   return true;
 }
 
-void get_required_extensions(extensions_t *extension)
-{
-  uint32_t glfw_extension_count = 0;
-  const char **glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-  uint32_t extenstion_count = glfw_extension_count + 1;
-  const char *extensions[extenstion_count];
-  if (ENABLE_VALIDATION_LAYERS)
-  {
-    for (int i = 0; i < glfw_extension_count; ++i)
-    {
-      extensions[i] = glfw_extensions[i];
-    }
-    // set the last element to the debug extension
-    extensions[extenstion_count] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
-    extension->count = extenstion_count;
-  }
-}
-
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
     VkDebugUtilsMessageTypeFlagsEXT message_type,
     const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data,
     void *p_user_data)
 {
-
-  log_message("INFO", p_callback_data->pMessage);
+  if (message_severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    log_message("WARNING", p_callback_data->pMessage);
+  else if (message_severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    log_message("ERROR", p_callback_data->pMessage);
+  else if (message_severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+    log_message("INFO", p_callback_data->pMessage);
+  else if (message_severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+    log_message("VERBOSE", p_callback_data->pMessage);
 
   return VK_FALSE;
 }

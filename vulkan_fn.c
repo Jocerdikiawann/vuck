@@ -74,6 +74,70 @@ vk_t create_instance()
   return vk;
 }
 
+void pick_physical_device(vk_t *vk)
+{
+  uint32_t device_count = 0;
+  vkEnumeratePhysicalDevices(vk->instance, &device_count, NULL);
+
+  if (device_count == 0)
+  {
+    printf("Failed to find GPUs with Vulkan support\n");
+    exit(0);
+  }
+
+  VkPhysicalDevice devices[device_count];
+  vkEnumeratePhysicalDevices(vk->instance, &device_count, devices);
+
+  for (int i = 0; i < device_count; ++i)
+  {
+    if (is_device_suitable(devices[i]))
+    {
+      vk->physical_device = devices[i];
+      break;
+    }
+  }
+
+  if (vk->physical_device == VK_NULL_HANDLE)
+  {
+    printf("Failed to find a suitable GPU\n");
+    exit(0);
+  }
+}
+
+bool is_device_suitable(VkPhysicalDevice device)
+{
+  queue_familiy_indices_t indices = find_queue_families(device);
+  return indices.graphics_family >= 0;
+}
+
+queue_familiy_indices_t find_queue_families(VkPhysicalDevice device)
+{
+  queue_familiy_indices_t indices;
+  uint32_t queue_family_count = 0;
+
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, NULL);
+
+  VkQueueFamilyProperties queue_families[queue_family_count];
+
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families);
+
+  uint32_t i = 0;
+  for (i = 0; i < queue_family_count; ++i)
+  {
+    if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+    {
+      indices.graphics_family = i;
+      break;
+    }
+
+    if (indices.graphics_family >= 0)
+    {
+      break;
+    }
+  }
+  return indices;
+}
+
 VkResult create_debug_utils_messenger_ext(
     VkInstance instance,
     const VkDebugUtilsMessengerCreateInfoEXT *p_create_info,

@@ -15,24 +15,25 @@
 
 typedef struct
 {
-  VkInstance instance;
-  VkDebugUtilsMessengerEXT debug_messenger;
+    VkInstance instance;
+    VkDebugUtilsMessengerEXT debug_messenger;
+    VkPhysicalDevice physical_device;
 } vk_t;
 
 typedef struct
 {
-  char *extension;
-} extension_t;
-
-typedef struct
-{
-  const char **extension;
-  uint32_t count;
-} extensions_t;
+    uint32_t graphics_family;
+} queue_familiy_indices_t;
 
 vk_t create_instance();
 
+void pick_physical_device(vk_t *vk);
+
 void setup_debug_messenger(vk_t *vk);
+
+bool is_device_suitable(VkPhysicalDevice device);
+
+queue_familiy_indices_t find_queue_families(VkPhysicalDevice device);
 
 VkResult create_debug_utils_messenger_ext(
     VkInstance instance,
@@ -48,8 +49,6 @@ void destroy_debug_utils_messenger_ext(
     const VkAllocationCallbacks *p_allocator);
 
 bool check_validation_layer_support();
-
-void get_required_extensions(extensions_t *extensions);
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,

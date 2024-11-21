@@ -16,7 +16,10 @@ int main()
 {
   glfwInit();
   GLFWwindow *window = create_window(800, 600, "Vuck");
+  // VULKAN SECTION START
   vk_t vk = create_instance();
+  pick_physical_device(&vk);
+  // VULKAN SECTION END
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();

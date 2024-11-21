@@ -18,6 +18,7 @@ typedef struct
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
     VkPhysicalDevice physical_device;
+    VkDevice device;
 } vk_t;
 
 typedef struct
@@ -30,6 +31,8 @@ vk_t create_instance();
 void pick_physical_device(vk_t *vk);
 
 void setup_debug_messenger(vk_t *vk);
+
+void create_logical_device(vk_t *vk);
 
 bool is_device_suitable(VkPhysicalDevice device);
 

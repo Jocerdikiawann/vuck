@@ -104,6 +104,30 @@ void pick_physical_device(vk_t *vk)
   }
 }
 
+void create_logical_device(vk_t *vk)
+{
+  queue_familiy_indices_t indices = find_queue_families(vk->physical_device);
+  VkDeviceQueueCreateInfo queue_create_info = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+      .queueFamilyIndex = indices.graphics_family,
+      .queueCount = 1,
+      .pQueuePriorities = (float[]){1.0},
+  };
+
+  VkPhysicalDeviceFeatures device_features = {};
+
+  VkDeviceCreateInfo device_info = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+      .pQueueCreateInfos = &queue_create_info,
+      .queueCreateInfoCount = 1,
+      .pEnabledFeatures = &device_features,
+  };
+
+  // TODO: section creating logical device in khoronos documentation
+  // https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.html#_creating_the_logical_device
+  // sleepy :)
+}
+
 bool is_device_suitable(VkPhysicalDevice device)
 {
   queue_familiy_indices_t indices = find_queue_families(device);

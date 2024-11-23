@@ -9,6 +9,7 @@ void clean_up(vk_t *vk, GLFWwindow *window)
   }
 
   vkDestroyInstance(vk->instance, NULL);
+  vkDestroyDevice(vk->device, NULL);
   destroy_window(window);
 }
 
@@ -16,10 +17,13 @@ int main()
 {
   glfwInit();
   GLFWwindow *window = create_window(800, 600, "Vuck");
+
   // VULKAN SECTION START
   vk_t vk = create_instance();
   pick_physical_device(&vk);
+  create_logical_device(&vk);
   // VULKAN SECTION END
+
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();

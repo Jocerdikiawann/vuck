@@ -121,11 +121,24 @@ void create_logical_device(vk_t *vk)
       .pQueueCreateInfos = &queue_create_info,
       .queueCreateInfoCount = 1,
       .pEnabledFeatures = &device_features,
+      .enabledExtensionCount = 0,
   };
 
-  // TODO: section creating logical device in khoronos documentation
-  // https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/00_Setup/04_Logical_device_and_queues.html#_creating_the_logical_device
-  // sleepy :)
+  if (ENABLE_VALIDATION_LAYERS)
+  {
+    device_info.enabledLayerCount = size_of_validation_layers;
+    device_info.ppEnabledLayerNames = validation_layers;
+  }
+  else
+  {
+    device_info.enabledLayerCount = 0;
+  }
+
+  if (vkCreateDevice(vk->physical_device, &device_info, VK_NULL_HANDLE, vk->device) != VK_SUCCESS)
+  {
+    printf("Failed to create logical device\n");
+    exit(0);
+  }
 }
 
 bool is_device_suitable(VkPhysicalDevice device)

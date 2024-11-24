@@ -69,9 +69,16 @@ vk_t create_instance()
   vk_t vk = {
       .instance = instance,
   };
-
-  setup_debug_messenger(&vk);
   return vk;
+}
+
+void create_surface(vk_t *vk, GLFWwindow *window)
+{
+  if (glfwCreateWindowSurface(vk->instance, window, NULL, &vk->surface) != VK_SUCCESS)
+  {
+    printf("Failed to create window surface\n");
+    exit(0);
+  }
 }
 
 void pick_physical_device(vk_t *vk)
@@ -90,7 +97,7 @@ void pick_physical_device(vk_t *vk)
 
   for (int i = 0; i < device_count; ++i)
   {
-    if (is_device_suitable(devices[i]))
+    if (is_device_suitable(devices[i], vk->surface))
     {
       vk->physical_device = devices[i];
       break;
@@ -106,20 +113,30 @@ void pick_physical_device(vk_t *vk)
 
 void create_logical_device(vk_t *vk)
 {
-  queue_familiy_indices_t indices = find_queue_families(vk->physical_device);
-  VkDeviceQueueCreateInfo queue_create_info = {
-      .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-      .queueFamilyIndex = indices.graphics_family,
-      .queueCount = 1,
-      .pQueuePriorities = (float[]){1.0},
-  };
+  queue_familiy_indices_t indices = find_queue_families(vk->physical_device, vk->surface);
+  int size_queue_create_info = 2;
+  VkDeviceQueueCreateInfo queue_create_infos[size_queue_create_info + 1];
+  uint32_t unique_queue_families[] = {indices.graphics_family, indices.present_family};
+  float queue_priority = 1.0;
+
+  for (size_t i = 0; i < size_queue_create_info; ++i)
+  {
+    VkDeviceQueueCreateInfo queue_create_info = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+        .queueFamilyIndex = unique_queue_families[i],
+        .queueCount = 1,
+        .pQueuePriorities = &queue_priority,
+    };
+
+    queue_create_infos[i] = queue_create_info;
+  }
 
   VkPhysicalDeviceFeatures device_features = {};
 
   VkDeviceCreateInfo device_info = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-      .pQueueCreateInfos = &queue_create_info,
-      .queueCreateInfoCount = 1,
+      .queueCreateInfoCount = size_queue_create_info,
+      .pQueueCreateInfos = queue_create_infos,
       .pEnabledFeatures = &device_features,
       .enabledExtensionCount = 0,
   };
@@ -134,22 +151,30 @@ void create_logical_device(vk_t *vk)
     device_info.enabledLayerCount = 0;
   }
 
-  if (vkCreateDevice(vk->physical_device, &device_info, VK_NULL_HANDLE, vk->device) != VK_SUCCESS)
+  if (vkCreateDevice(vk->physical_device, &device_info, VK_NULL_HANDLE, &vk->device) != VK_SUCCESS)
   {
     printf("Failed to create logical device\n");
     exit(0);
   }
+
+  vkGetDeviceQueue(vk->device, indices.graphics_family, 0, &vk->graphics_queue);
+  vkGetDeviceQueue(vk->device, indices.present_family, 0, &vk->present_queue);
 }
 
-bool is_device_suitable(VkPhysicalDevice device)
+bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
-  queue_familiy_indices_t indices = find_queue_families(device);
-  return indices.graphics_family >= 0;
+  queue_familiy_indices_t indices = find_queue_families(device, surface);
+  return is_complete(indices);
 }
 
-queue_familiy_indices_t find_queue_families(VkPhysicalDevice device)
+bool is_complete(queue_familiy_indices_t indices)
 {
-  queue_familiy_indices_t indices;
+  return indices.graphics_family >= 0 && indices.present_family >= 0;
+}
+
+queue_familiy_indices_t find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface)
+{
+  queue_familiy_indices_t indices = {0};
   uint32_t queue_family_count = 0;
 
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, NULL);
@@ -157,19 +182,18 @@ queue_familiy_indices_t find_queue_families(VkPhysicalDevice device)
   VkQueueFamilyProperties queue_families[queue_family_count];
 
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families);
-
-  uint32_t i = 0;
-  for (i = 0; i < queue_family_count; ++i)
+  for (uint32_t i = 0; i < queue_family_count; ++i)
   {
     if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
     {
       indices.graphics_family = i;
-      break;
     }
 
-    if (indices.graphics_family >= 0)
+    VkBool32 present_support = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+    if (present_support)
     {
-      break;
+      indices.present_family = i;
     }
   }
   return indices;

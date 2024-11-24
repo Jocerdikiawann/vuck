@@ -3,13 +3,13 @@
 
 void clean_up(vk_t *vk, GLFWwindow *window)
 {
+  vkDestroyDevice(vk->device, NULL);
   if (ENABLE_VALIDATION_LAYERS)
   {
     destroy_debug_utils_messenger_ext(vk->instance, vk->debug_messenger, NULL);
   }
-
+  vkDestroySurfaceKHR(vk->instance, vk->surface, NULL);
   vkDestroyInstance(vk->instance, NULL);
-  vkDestroyDevice(vk->device, NULL);
   destroy_window(window);
 }
 
@@ -20,6 +20,8 @@ int main()
 
   // VULKAN SECTION START
   vk_t vk = create_instance();
+  setup_debug_messenger(&vk);
+  create_surface(&vk, window);
   pick_physical_device(&vk);
   create_logical_device(&vk);
   // VULKAN SECTION END

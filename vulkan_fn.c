@@ -115,8 +115,8 @@ void create_logical_device(vk_t *vk)
 {
   queue_familiy_indices_t indices = find_queue_families(vk->physical_device, vk->surface);
   int size_queue_create_info = 2;
-  VkDeviceQueueCreateInfo queue_create_infos[size_queue_create_info + 1];
-  uint32_t unique_queue_families[] = {indices.graphics_family, indices.present_family};
+  VkDeviceQueueCreateInfo queue_create_infos[size_queue_create_info];
+  uint32_t unique_queue_families[] = {indices.graphics_family.value, indices.present_family.value};
   float queue_priority = 1.0;
 
   for (size_t i = 0; i < size_queue_create_info; ++i)
@@ -157,19 +157,19 @@ void create_logical_device(vk_t *vk)
     exit(0);
   }
 
-  vkGetDeviceQueue(vk->device, indices.graphics_family, 0, &vk->graphics_queue);
-  vkGetDeviceQueue(vk->device, indices.present_family, 0, &vk->present_queue);
+  vkGetDeviceQueue(vk->device, indices.graphics_family.value, 0, &vk->graphics_queue);
+  vkGetDeviceQueue(vk->device, indices.present_family.value, 0, &vk->present_queue);
 }
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
   queue_familiy_indices_t indices = find_queue_families(device, surface);
-  return is_complete(indices);
+  return is_complete(&indices);
 }
 
-bool is_complete(queue_familiy_indices_t indices)
+bool is_complete(queue_familiy_indices_t *indices)
 {
-  return indices.graphics_family >= 0 && indices.present_family >= 0;
+  return indices->graphics_family.has_value && indices->present_family.has_value;
 }
 
 queue_familiy_indices_t find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -186,15 +186,21 @@ queue_familiy_indices_t find_queue_families(VkPhysicalDevice device, VkSurfaceKH
   {
     if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
     {
-      indices.graphics_family = i;
+      indices.graphics_family.value = i;
+      indices.graphics_family.has_value = true;
     }
 
     VkBool32 present_support = false;
     vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
     if (present_support)
     {
-      indices.present_family = i;
+      indices.present_family.value = i;
+      indices.present_family.has_value = true;
     }
+
+    //in 
+    // if(is_complete(&indices))
+    // break;
   }
   return indices;
 }

@@ -26,8 +26,13 @@ typedef struct
 
 typedef struct
 {
-    uint32_t graphics_family;
-    uint32_t present_family;
+    uint32_t value;
+    bool has_value;
+} optional_uint32t_t;
+typedef struct
+{
+    optional_uint32t_t graphics_family;
+    optional_uint32t_t present_family;
 } queue_familiy_indices_t;
 
 vk_t create_instance();
@@ -43,7 +48,7 @@ void create_logical_device(vk_t *vk);
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 queue_familiy_indices_t find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface);
-bool is_complete(queue_familiy_indices_t indices);
+bool is_complete(queue_familiy_indices_t *indices);
 
 VkResult create_debug_utils_messenger_ext(
     VkInstance instance,

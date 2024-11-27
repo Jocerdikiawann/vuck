@@ -5,6 +5,11 @@ const char *validation_layers[] = {
     "VK_LAYER_KHRONOS_validation",
 };
 
+int size_of_device_extensions = 1;
+const char *device_extensions[] = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+};
+
 vk_t create_instance()
 {
   if (ENABLE_VALIDATION_LAYERS && !check_validation_layer_support())
@@ -138,7 +143,8 @@ void create_logical_device(vk_t *vk)
       .queueCreateInfoCount = size_queue_create_info,
       .pQueueCreateInfos = queue_create_infos,
       .pEnabledFeatures = &device_features,
-      .enabledExtensionCount = 0,
+      .enabledExtensionCount = size_of_device_extensions,
+      .ppEnabledLayerNames = device_extensions,
   };
 
   if (ENABLE_VALIDATION_LAYERS)
@@ -161,10 +167,43 @@ void create_logical_device(vk_t *vk)
   vkGetDeviceQueue(vk->device, indices.present_family.value, 0, &vk->present_queue);
 }
 
+bool check_device_extension_support(VkPhysicalDevice device)
+{
+  uint32_t extension_count;
+  vkEnumerateDeviceExtensionProperties(device, VK_NULL_HANDLE, &extension_count, VK_NULL_HANDLE);
+
+  VkExtensionProperties available_extensions[extension_count];
+
+  vkEnumerateDeviceExtensionProperties(device, VK_NULL_HANDLE, &extension_count, available_extensions);
+
+  // membandingkan apakah device extension yang diminta ada di available extension
+  for (size_t i = 0; i < size_of_device_extensions; ++i)
+  {
+    bool extension_found = false;
+    for (size_t j = 0; j < extension_count; ++j)
+    {
+      if (strcmp(device_extensions[i], available_extensions[j].extensionName) == 0)
+      {
+        extension_found = true;
+        break;
+      }
+    }
+    if (!extension_found)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
   queue_familiy_indices_t indices = find_queue_families(device, surface);
-  return is_complete(&indices);
+
+  bool extension_supported = check_device_extension_support(device);
+
+  return is_complete(&indices) && extension_supported;
 }
 
 bool is_complete(queue_familiy_indices_t *indices)
@@ -198,9 +237,9 @@ queue_familiy_indices_t find_queue_families(VkPhysicalDevice device, VkSurfaceKH
       indices.present_family.has_value = true;
     }
 
-    //in 
-    // if(is_complete(&indices))
-    // break;
+    // in
+    //  if(is_complete(&indices))
+    //  break;
   }
   return indices;
 }

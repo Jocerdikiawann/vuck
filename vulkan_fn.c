@@ -197,6 +197,23 @@ bool check_device_extension_support(VkPhysicalDevice device)
   return true;
 }
 
+swap_chain_support_details_t query_swap_chain_support(vk_t *vk)
+{
+  swap_chain_support_details_t details;
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk->physical_device, vk->surface, &details.capabilities);
+
+  uint32_t format_count;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(vk->physical_device, vk->surface, &format_count, NULL);
+
+  if (format_count != 0)
+  {
+    details.formats[format_count];
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vk->physical_device, vk->surface, &format_count, details.formats);
+  }
+
+  return details;
+}
+
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
   queue_familiy_indices_t indices = find_queue_families(device, surface);

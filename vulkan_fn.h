@@ -15,6 +15,13 @@
 
 typedef struct
 {
+    VkSurfaceCapabilitiesKHR capabilities;
+    VkSurfaceFormatKHR *formats;
+    VkPresentModeKHR *present_modes;
+} swap_chain_support_details_t;
+
+typedef struct
+{
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
     VkPhysicalDevice physical_device;
@@ -44,6 +51,10 @@ void pick_physical_device(vk_t *vk);
 void setup_debug_messenger(vk_t *vk);
 
 void create_logical_device(vk_t *vk);
+
+swap_chain_support_details_t query_swap_chain_support(VkPhysicalDevice *device);
+
+bool check_device_extension_support(VkPhysicalDevice device);
 
 bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
 

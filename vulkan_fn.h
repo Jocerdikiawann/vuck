@@ -17,6 +17,7 @@ typedef struct
 {
     VkSurfaceCapabilitiesKHR capabilities;
     VkSurfaceFormatKHR *formats;
+    uint32_t format_count, present_mode_count;
     VkPresentModeKHR *present_modes;
 } swap_chain_support_details_t;
 
@@ -52,7 +53,17 @@ void setup_debug_messenger(vk_t *vk);
 
 void create_logical_device(vk_t *vk);
 
-swap_chain_support_details_t query_swap_chain_support(VkPhysicalDevice *device);
+void create_swap_chain(vk_t *vk, GLFWwindow *window);
+
+int clamp(int value, int min, int max);
+
+swap_chain_support_details_t query_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
+
+VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR *capabilities, GLFWwindow *window);
+
+VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR *available_formats, uint32_t format_count);
+
+VkPresentModeKHR choose_swap_present_mode(VkPresentModeKHR *available_present_modes, uint32_t present_mode_count);
 
 bool check_device_extension_support(VkPhysicalDevice device);
 

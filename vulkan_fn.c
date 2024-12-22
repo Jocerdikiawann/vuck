@@ -1,5 +1,8 @@
 #include "vulkan_fn.h"
 
+// TODO:
+//  1. Create swap chain :  https://docs.vulkan.org/tutorial/latest/03_Drawing_a_triangle/01_Presentation/01_Swap_chain.html#_creating_the_swap_chain
+
 int size_of_validation_layers = 1;
 const char *validation_layers[] = {
     "VK_LAYER_KHRONOS_validation",
@@ -167,6 +170,14 @@ void create_logical_device(vk_t *vk)
   vkGetDeviceQueue(vk->device, indices.present_family.value, 0, &vk->present_queue);
 }
 
+void create_swap_chain(vk_t *vk, GLFWwindow *window)
+{
+  swap_chain_support_details_t swap_chain_support = query_swap_chain_support(vk->physical_device, vk->surface);
+  VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats, swap_chain_support.format_count);
+  VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes, swap_chain_support.present_mode_count);
+  VkExtent2D extent = choose_swap_extent(&swap_chain_support.capabilities, window);
+}
+
 bool check_device_extension_support(VkPhysicalDevice device)
 {
   uint32_t extension_count;
@@ -176,7 +187,7 @@ bool check_device_extension_support(VkPhysicalDevice device)
 
   vkEnumerateDeviceExtensionProperties(device, VK_NULL_HANDLE, &extension_count, available_extensions);
 
-  // membandingkan apakah device extension yang diminta ada di available extension
+  // membandingkan apakah device extension yang diminta ada di available_extension
   for (size_t i = 0; i < size_of_device_extensions; ++i)
   {
     bool extension_found = false;
@@ -197,19 +208,88 @@ bool check_device_extension_support(VkPhysicalDevice device)
   return true;
 }
 
-swap_chain_support_details_t query_swap_chain_support(vk_t *vk)
+VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR *available_formats, uint32_t format_count)
+{
+  // Each VkSurfaceFormatKHR entry contains a format and a colorSpace member.
+  for (size_t i = 0; i < format_count; ++i)
+  {
+    if (available_formats[i].format == VK_FORMAT_B8G8R8A8_SRGB && available_formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+    {
+      return available_formats[i];
+    }
+  }
+  return available_formats[0];
+};
+
+VkPresentModeKHR choose_swap_present_mode(VkPresentModeKHR *available_present_modes, uint32_t present_mode_count)
+{
+  for (size_t i = 0; i < present_mode_count; ++i)
+  {
+    if (available_present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+    {
+      return available_present_modes[i];
+    }
+  }
+
+  return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+int clamp(int value, int min, int max)
+{
+  if (value < min)
+    return min;
+  if (value > max)
+    return max;
+  return value;
+}
+
+VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR *capabilities, GLFWwindow *window)
+{
+  if (capabilities->currentExtent.width != UINT32_MAX)
+  {
+    return capabilities->currentExtent;
+  }
+  else
+  {
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+
+    VkExtent2D actual_extent = {
+        .width = width,
+        .height = height,
+    };
+
+    actual_extent.height = clamp(actual_extent.height, capabilities->minImageExtent.height, capabilities->maxImageExtent.height);
+    actual_extent.width = clamp(actual_extent.width, capabilities->minImageExtent.width, capabilities->maxImageExtent.width);
+
+    return actual_extent;
+  }
+}
+
+swap_chain_support_details_t query_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
   swap_chain_support_details_t details;
-  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk->physical_device, vk->surface, &details.capabilities);
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
   uint32_t format_count;
-  vkGetPhysicalDeviceSurfaceFormatsKHR(vk->physical_device, vk->surface, &format_count, NULL);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, NULL);
 
   if (format_count != 0)
   {
     details.formats[format_count];
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vk->physical_device, vk->surface, &format_count, details.formats);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, details.formats);
   }
+
+  uint32_t present_mode_count;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, NULL);
+  if (present_mode_count != 0)
+  {
+    details.present_modes[present_mode_count];
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, details.present_modes);
+  }
+
+  details.format_count = format_count;
+  details.present_mode_count = present_mode_count;
 
   return details;
 }
@@ -220,7 +300,14 @@ bool is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
 
   bool extension_supported = check_device_extension_support(device);
 
-  return is_complete(&indices) && extension_supported;
+  bool swap_chain_adequate = false;
+  if (extension_supported)
+  {
+    swap_chain_support_details_t swap_chain_support = query_swap_chain_support(device, surface);
+    swap_chain_adequate = swap_chain_support.formats != NULL && swap_chain_support.present_modes != NULL;
+  }
+
+  return is_complete(&indices) && extension_supported && swap_chain_adequate;
 }
 
 bool is_complete(queue_familiy_indices_t *indices)

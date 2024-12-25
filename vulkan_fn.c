@@ -176,6 +176,40 @@ void create_swap_chain(vk_t *vk, GLFWwindow *window)
   VkSurfaceFormatKHR surface_format = choose_swap_surface_format(swap_chain_support.formats, swap_chain_support.format_count);
   VkPresentModeKHR present_mode = choose_swap_present_mode(swap_chain_support.present_modes, swap_chain_support.present_mode_count);
   VkExtent2D extent = choose_swap_extent(&swap_chain_support.capabilities, window);
+
+  uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
+  if (swap_chain_support.capabilities.maxImageCount > 0 && image_count > swap_chain_support.capabilities.maxImageCount)
+  {
+    image_count = swap_chain_support.capabilities.maxImageCount;
+  }
+
+  VkSwapchainCreateInfoKHR create_info = {
+      .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT,
+      .surface = vk->surface,
+      .minImageCount = image_count,
+      .imageFormat = surface_format.format,
+      .imageColorSpace = surface_format.colorSpace,
+      .imageExtent = extent,
+      .imageArrayLayers = 1,
+      .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
+
+  queue_familiy_indices_t indices = find_queue_families(vk->physical_device, vk->surface);
+  uint32_t queue_family_indices[] = {indices.graphics_family.value, indices.present_family.value};
+
+  if (indices.graphics_family.value != indices.present_family.value)
+  {
+    create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    create_info.queueFamilyIndexCount = 2;
+    create_info.pQueueFamilyIndices = queue_family_indices;
+  }
+  else
+  {
+    create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    create_info.queueFamilyIndexCount = 0;
+    create_info.pQueueFamilyIndices = NULL;
+  }
+
+  
 }
 
 bool check_device_extension_support(VkPhysicalDevice device)
